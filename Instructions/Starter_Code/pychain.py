@@ -49,12 +49,22 @@ import hashlib
 # @TODO
 # Create a Record Data Class that consists of the `sender`, `receiver`, and
 # `amount` attributes
-# YOUR CODE HERE
-
+@dataclass
+class Record:
+    sender: str
+    receiver: str
+    amount: float
 
 ################################################################################
 # Step 2:
 # Modify the Existing Block Data Class to Store Record Data
+@dataclass
+class Block:
+    record: Record
+    creator_id: int
+    prev_hash: str = "0"
+    timestamp: str = datetime.datetime.utcnow().strftime("%H:%M:%S")
+    nonce: int = 0
 
 # Rename the `data` attribute in your `Block` class to `record`, and then set
 # it to use an instance of the new `Record` class that you created in the
@@ -68,8 +78,7 @@ class Block:
 
     # @TODO
     # Rename the `data` attribute to `record`, and set the data type to `Record`
-    data: Any
-
+    record: Record
     creator_id: int
     prev_hash: str = "0"
     timestamp: str = datetime.datetime.utcnow().strftime("%H:%M:%S")
@@ -102,18 +111,12 @@ class PyChain:
     difficulty: int = 4
 
     def proof_of_work(self, block):
-
         calculated_hash = block.hash_block()
-
         num_of_zeros = "0" * self.difficulty
-
         while not calculated_hash.startswith(num_of_zeros):
-
             block.nonce += 1
-
             calculated_hash = block.hash_block()
-
-        print("Wining Hash", calculated_hash)
+        print("Winning Hash", calculated_hash)
         return block
 
     def add_block(self, candidate_block):
@@ -122,14 +125,11 @@ class PyChain:
 
     def is_valid(self):
         block_hash = self.chain[0].hash_block()
-
         for block in self.chain[1:]:
             if block_hash != block.prev_hash:
                 print("Blockchain is invalid!")
                 return False
-
             block_hash = block.hash_block()
-
         print("Blockchain is Valid")
         return True
 
@@ -139,14 +139,13 @@ class PyChain:
 # Adds the cache decorator for Streamlit
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def setup():
-    print("Initializing Chain")
-    return PyChain([Block("Genesis", 0)])
+    print("Initializing Chain 👀")
+    return PyChain([Block(Record("Genesis", "0", 0.0), 0)])
 
-
-st.markdown("# PyChain")
-st.markdown("## Store a Transaction Record in the PyChain")
+st.markdown("# PyChain 💰")
+st.markdown("## Store a Transaction Record in the PyChain 🔗")
 
 pychain = setup()
 
@@ -170,49 +169,44 @@ input_data = st.text_input("Block Data")
 
 # @TODO:
 # Add an input area where you can get a value for `sender` from the user.
-# YOUR CODE HERE
+sender = st.text_input("Sender 📤")
 
 # @TODO:
 # Add an input area where you can get a value for `receiver` from the user.
-# YOUR CODE HERE
+receiver = st.text_input("Receiver 📥")
 
 # @TODO:
 # Add an input area where you can get a value for `amount` from the user.
-# YOUR CODE HERE
-
-if st.button("Add Block"):
-    prev_block = pychain.chain[-1]
-    prev_block_hash = prev_block.hash_block()
-
+amount = st.number_input("Amount", min_value=0.0, step=0.01)
     # @TODO
     # Update `new_block` so that `Block` consists of an attribute named `record`
     # which is set equal to a `Record` that contains the `sender`, `receiver`,
     # and `amount` values
+if st.button("Add Block"):
+    prev_block = pychain.chain[-1]
+    prev_block_hash = prev_block.hash_block()
     new_block = Block(
-        data=input_data,
+        Record(sender, receiver, amount),
         creator_id=42,
         prev_hash=prev_block_hash
     )
-
     pychain.add_block(new_block)
     st.balloons()
 
 ################################################################################
 # Streamlit Code (continues)
 
-st.markdown("## The PyChain Ledger")
-
+st.markdown("## The PyChain Ledger 📒")
 pychain_df = pd.DataFrame(pychain.chain).astype(str)
 st.write(pychain_df)
 
-difficulty = st.sidebar.slider("Block Difficulty", 1, 5, 2)
+difficulty = st.sidebar.slider("Block Difficulty 🔒", 1, 5, 2)
 pychain.difficulty = difficulty
 
-st.sidebar.write("# Block Inspector")
+st.sidebar.write("# Block Inspector 🔍")
 selected_block = st.sidebar.selectbox(
-    "Which block would you like to see?", pychain.chain
+    "Which block would you like to see? 🕵️‍♀️", pychain.chain
 )
-
 st.sidebar.write(selected_block)
 
 if st.button("Validate Chain"):
